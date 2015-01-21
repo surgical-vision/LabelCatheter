@@ -78,8 +78,8 @@ int main(int argc, char* argv[])
 
     Var<int> LevelOfDetail("ui.Level of Details", 10, 1, 50);
     Var<bool> check_show_bspline("ui.Show B-spline", true, true, false);
-    Var<bool> check_show_knot_pts("ui.Show Knot Pts", false, true, false);
-    Var<bool> check_show_ctrl_pts("ui.Show Ctrl Pts", false, true, false);
+    Var<bool> check_show_knot_pts("ui.Show Knot Pts", true, true, false);
+    Var<bool> check_show_ctrl_pts("ui.Show Ctrl Pts", true, true, false);
 
     Var<bool> button_reset("ui.Reset", false, false);
     Var<bool> button_export_label_img("ui.Export Label Image", false, false);
