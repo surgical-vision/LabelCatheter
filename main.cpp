@@ -42,6 +42,7 @@ int main(int argc, char* argv[])
         h = video_capturer.get(CV_CAP_PROP_FRAME_HEIGHT);
     } else  {
         cerr << "Couldn't open video file: " << argv[1] << endl;
+        exit(1);
     }
 
     uint32_t const ui_width = 180;
