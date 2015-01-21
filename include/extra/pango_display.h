@@ -1,5 +1,5 @@
-#ifndef CORNSNAKE_PANGO_DISPLAY
-#define CORNSNAKE_PANGO_DISPLAY
+#ifndef LABEL_BSPLINE_PANGO_DISPLAY
+#define LABEL_BSPLINE_PANGO_DISPLAY
 
 #include <pangolin/pangolin.h>
 
@@ -57,4 +57,4 @@ inline void SetupContainer(pangolin::View& container, int num_views, float aspec
     }
 }
 
-#endif // CORNSNAKE_PANGO_DISPLAY
+#endif // LABEL_BSPLINE_PANGO_DISPLAY

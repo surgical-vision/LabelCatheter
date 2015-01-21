@@ -20,9 +20,6 @@ option(BUILD_SHARED_LIBS "Build Shared Library" ON)
 # Add local path for finding packages, set the local version first
 SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-# Platform configuration vars
-include(${CMAKE_MODULE_PATH}/configs/SetPlatformVars.cmake)
-
 if( NOT MSVC )
   # Set GCC style compiler flags
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wno-unused-parameter")
@@ -55,8 +52,8 @@ if(Pangolin_FOUND)
     message(STATUS "Pangolin Found and Enabled")
 endif()
 
-set(INC_DIR ../include)
-list(APPEND HEADER ${INC_DIR}/bspline.h)
+set(INC_DIR include)
+list(APPEND HEADER ${INC_DIR}/bspline.h ${INC_DIR}/extra/pango_display.h ${INC_DIR}/extra/pango_drawer.h)
 
 add_executable(LabelBspline main.cpp ${HEADER})
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

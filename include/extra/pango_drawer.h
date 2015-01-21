@@ -1,13 +1,11 @@
-#ifndef CORNSNAKE_DRAWER_H
-#define CORNSNAKE_DRAWER_H
+#ifndef LABEL_BSPLINE_PANGO_DRAWER
+#define LABEL_BSPLINE_PANGO_DRAWER
 
 #include <pangolin/pangolin.h>
 #include <pangolin/gl.h>
 #include <pangolin/glsl.h>
 
 #include "../bspline.h"
-
-namespace cornsnake {
 
 using namespace Eigen;
 using namespace pangolin;
@@ -313,6 +311,4 @@ private:
     bool show_bspline;
 };
 
-} // namespace cornsnake {
-
-#endif // CORNSNAKE_DRAWER_H
+#endif // LABEL_BSPLINE_PANGO_DRAWER

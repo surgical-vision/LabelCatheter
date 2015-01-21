@@ -18,7 +18,6 @@
 #include "include/extra/pango_drawer.h"
 #include "include/bspline.h"
 
-using namespace cornsnake;
 using namespace cv;
 using namespace pangolin;
 using namespace std;

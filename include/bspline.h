@@ -1,14 +1,10 @@
-#ifndef CORNSNAKE_BSPLIN_H
-#define CORNSNAKE_BSPLIN_H
+#ifndef LABEL_BSPLIN_BSPLINE_H
+#define LABEL_BSPLIN_BSPLINE_H
 
 #include <vector>
 
 #include <Eigen/Core>
 #include <Eigen/LU>
-
-//#include <cornsnake/config.h>
-
-namespace cornsnake {
 
 using namespace std;
 using namespace Eigen;
@@ -391,6 +387,4 @@ private:
 
 };
 
-} // namespace cornsnake {
-
-#endif // CORNSNAKE_BSPLINE
+#endif // LABEL_BSPLIN_BSPLINE_H
