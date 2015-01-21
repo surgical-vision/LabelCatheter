@@ -1,9 +1,8 @@
+cmake_minimum_required(VERSION 2.6)
 project( LabelBspline )
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR})
-
-cmake_minimum_required(VERSION 3.0)
 
 # Overide with cmake -DCMAKE_BUILD_TYPE=Debug
 if(NOT CMAKE_BUILD_TYPE)
