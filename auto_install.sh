@@ -80,7 +80,7 @@ opencv=$(brew list --versions opencv)
 if [[ -n $opencv ]]; then 
 	echo "$opencv installed" 
 else
-	brew tap homebrew/science || true
+	brew tap homebrew/science
 	brew install opencv --with-ffmpeg
 fi
 
@@ -108,7 +108,7 @@ make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
 cp LabelCatheter /usr/local/bin/label_catheter
-cp -r ../osx/LabelCatheter.app $dir
+cp -r ../osx/LabelCatheter.app /Applications/
 
 # ========== Cleanup ===================
 cd $dir
