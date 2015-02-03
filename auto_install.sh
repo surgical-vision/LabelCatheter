@@ -25,16 +25,16 @@ function clean_up {
 trap clean_up SIGHUP SIGINT SIGTERM EXIT
 
 # ========== Basic tool installation ===================
-printf '\n\e[1;31m==== Check basic tools ====\e[0;31m\n'
+printf '\e[1;31m==== Check basic tools ====\e[0;39m'
 
 # Check if Homebrew is installed
-which -s brew
-if [[ $? != 0 ]]; then
+
+if [[ $(which -s brew) != 0 ]]; then
 	# Install Homebrew
-	printf '\n\e[1;36m==== Install Homebrew ====\e[0;39m\n'	
+	printf '\e[1;36m==== Install Homebrew ====\e[0;39m'	
 	ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 else
-	printf '\n\e[1;36m==== Update Homebrew ====\e[0;39m\n'	
+	printf '\e[1;36m==== Update Homebrew ====\e[0;39m'	
 	brew update
 fi
     
@@ -45,10 +45,10 @@ which -s git || brew install git
 which -s cmake || brew install cmake
 
 # ========== Dependent libraries installation ===================
-printf '\n\e[1;31m==== Install dependencies ====\e[0;31m\n'
+printf '\n\e[1;31m==== Install dependencies ====\e[0;39m'
 
 # GLEW
-printf '\n\e[1;36m==== Check GLEW ====\e[0;39m\n'
+printf '\e[1;36m==== Check GLEW ====\e[0;39m'
 glew=$(brew list --versions glew)
 if [[ -n $glew ]]; then
 	echo "$glew installed"
@@ -57,7 +57,7 @@ else
 fi
 
 # Boost
-printf '\n\e[1;36m==== Check Boost ====\e[0;39m\n'
+printf '\e[1;36m==== Check Boost ====\e[0;39m'
 boost=$(brew list --versions boost)
 if [[ -n $boost ]]; then 
 	echo "$boost installed" 
@@ -66,7 +66,7 @@ else
 fi
 
 # Eigen
-printf '\n\e[1;36m==== Check Eigen ====\e[0;39m\n'
+printf '\e[1;36m==== Check Eigen ====\e[0;39m'
 eigen=$(brew list --versions eigen)
 if [[ -n $eigen ]]; then 
 	echo "$eigen installed" 
@@ -75,7 +75,7 @@ else
 fi
 
 # OpenCV
-printf '\n\e[1;36m==== Check OpenCV ====\e[0;39m\n'
+printf '\e[1;36m==== Check OpenCV ====\e[0;39m'
 opencv=$(brew list --versions opencv)
 if [[ -n $opencv ]]; then 
 	echo "$opencv installed" 
@@ -85,9 +85,9 @@ else
 fi
 
 # Pangolin
-printf '\n\e[1;36m==== Check Pangolin ====\e[0;39m\n'
+printf '\e[1;36m==== Check Pangolin ====\e[0;39m'
 if [ ! -f /usr/local/lib/libpangolin* ]; then
-	printf '\n\e[1;36m==== Build Pangolin ====\e[0;39m\n'
+	printf '\e[1;36m==== Build Pangolin ====\e[0;39m'
 	git clone https://github.com/stevenlovegrove/Pangolin.git Pangolin
 	cd Pangolin; mkdir build; cd build
 
@@ -99,7 +99,7 @@ else
 fi
 
 # ========== Build LabelCatheter ===================
-printf '\n\e[1;36m==== Building LabelCatheter ====\e[0;39m\n'
+printf '\n\e[1;36m==== Building LabelCatheter ====\e[0;39m'
 git clone https://github.com/surgical-vision/LabelCatheter.git LabelCatheter
 cd LabelCatheter
 mkdir build; cd build
@@ -107,8 +107,11 @@ cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
+printf '\n\e[1;36m==== Installing LabelCatheter ====\e[0;39m'
+set -x
 cp LabelCatheter /usr/local/bin/label_catheter
 cp -r ../osx/LabelCatheter.app /Applications/
+set +x
 
 # ========== Cleanup ===================
 cd $dir
