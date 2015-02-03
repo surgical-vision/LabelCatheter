@@ -103,12 +103,12 @@ fi
 
 # ========== Build LabelCatheter ===================
 printf '\n\e[1;36m==== Building LabelCatheter ====\e[0;39m\n'
-git clone https://github.com/surgical-vision/LabelBspline.git LabelCatheter
+git clone https://github.com/surgical-vision/LabelCatheter.git LabelCatheter
 cd LabelCatheter
 mkdir build; cd build
 cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
-cp LabelBspline "$dir/LabelCatheter"
+cp LabelCatheter "$dir/LabelCatheter"
 cp -r ../osx/LabelCatheter.app $dir
 
 cd $dir
