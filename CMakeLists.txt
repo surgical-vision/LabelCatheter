@@ -44,7 +44,7 @@ if(OpenCV_FOUND)
     message(STATUS "OpenCV Found and Enabled")
 endif()
 
-find_package(Pangolin 0.2 REQUIRED)
+find_package(Pangolin REQUIRED)
 if(Pangolin_FOUND)
     include_directories(${Pangolin_INCLUDE_DIR})
     link_libraries(${Pangolin_LIBRARY})
