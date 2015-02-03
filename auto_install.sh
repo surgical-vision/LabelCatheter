@@ -93,10 +93,7 @@ if [ ! -f /usr/local/lib/libpangolin* ]; then
 
 	cmake .. -DEXPORT_Pangolin=OFF -DBUILD_PANGOLIN_VIDEO=OFF -DBUILD_EXAMPLES=OFF || clean_up "cmake failed" 
 	make -j8 || clean_up "make failed"
-
 	make install
-	cd $label_catheter_tmp_dir
-	rm -rf Pangolin
 else
 	echo "Pangolin installed"
 fi
@@ -110,7 +107,7 @@ cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
-cp LabelCatheter $dir/
+cp LabelCatheter /usr/local/bin/label_catheter
 cp -r ../osx/LabelCatheter.app $dir
 
 # ========== Cleanup ===================

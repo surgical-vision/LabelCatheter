@@ -226,7 +226,7 @@
 				<dict>
 					<key>COMMAND_STRING</key>
 					<string>cd $(dirname "$1")
-./LabelCatheter $1</string>
+/usr/local/bin/label_catheter $1</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -349,7 +349,7 @@
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>C0C7BF72-F23A-4085-83B5-ED7C630C055D</key>
+		<key>D811116A-3301-42E3-8790-291C18DAA5CB</key>
 		<dict>
 			<key>from</key>
 			<string>6F764278-8833-40B3-B483-B210A39C2AB2 - 6F764278-8833-40B3-B483-B210A39C2AB2</string>
