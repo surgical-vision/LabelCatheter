@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project( LabelBspline )
+project( LabelCatheter )
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR})
@@ -44,15 +44,17 @@ if(OpenCV_FOUND)
     message(STATUS "OpenCV Found and Enabled")
 endif()
 
-find_package(Pangolin REQUIRED)
+find_package(Pangolin 0.2 REQUIRED)
 if(Pangolin_FOUND)
     include_directories(${Pangolin_INCLUDE_DIR})
     link_libraries(${Pangolin_LIBRARY})
     message(STATUS "Pangolin Found and Enabled")
 endif()
 
+list(APPEND LIB_INC_DIR  "${PROJECT_SOURCE_DIR}/include;${CMAKE_CURRENT_BINARY_DIR}/include" )
+include_directories(${LIB_INC_DIR})
+
 set(INC_DIR include)
 list(APPEND HEADER ${INC_DIR}/bspline.h ${INC_DIR}/extra/pango_display.h ${INC_DIR}/extra/pango_drawer.h)
 
-add_executable(LabelBspline main.cpp ${HEADER})
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+add_executable(LabelCatheter src/main.cpp ${HEADER})

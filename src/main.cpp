@@ -14,9 +14,9 @@
 #include <pangolin/pangolin.h>
 #include <pangolin/timer.h>
 
-#include "include/extra/pango_display.h"
-#include "include/extra/pango_drawer.h"
-#include "include/bspline.h"
+#include <extra/pango_display.h>
+#include <extra/pango_drawer.h>
+#include <bspline.h>
 
 using namespace cv;
 using namespace pangolin;
@@ -99,6 +99,9 @@ int main(int argc, char* argv[])
 
     while(!pangolin::ShouldQuit())
     {
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         /* Binding frame seek and gap */
         label_frame_gap = (label_frame_gap/basis_gap)*basis_gap;
         frame_seek_idx = (frame_seek_idx/label_frame_gap)*label_frame_gap;
