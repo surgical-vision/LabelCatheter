@@ -80,7 +80,7 @@ opencv=$(brew list --versions opencv)
 if [[ -n $opencv ]]; then 
 	echo "$opencv installed" 
 else
-	brew tap homebrew/science
+	brew tap homebrew/science || true
 	brew install opencv --with-ffmpeg
 fi
 
