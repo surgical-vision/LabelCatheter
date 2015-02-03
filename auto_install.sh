@@ -22,7 +22,7 @@ function clean_up {
 	exit 1
 }
 
-trap clean_up SIGHUP SIGINT SIGTERM
+trap clean_up SIGHUP SIGINT SIGTERM EXIT
 
 # ========== Basic tool installation ===================
 printf '\n\e[1;31m==== Check basic tools ====\e[0;31m\n'
@@ -110,9 +110,9 @@ cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
-mkdir -p "$dir/LabelCatheter"
-cp LabelCatheter "$dir/"
+cp LabelCatheter $dir/
 cp -r ../osx/LabelCatheter.app $dir
 
+# ========== Cleanup ===================
 cd $dir
 rm -rf $label_catheter_tmp_dir 
