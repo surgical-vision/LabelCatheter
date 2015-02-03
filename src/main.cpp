@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 
     /* Create output directory */
     boost::filesystem::path current_path(boost::filesystem::current_path());
-    string output_dir = current_path.string() + "/" + "output";
+    string output_dir = current_path.string() + "/" + boost::filesystem::path(argv[1]).filename().replace_extension("").string() + "_label";
     if(!boost::filesystem::is_directory(boost::filesystem::path(output_dir)))
         boost::filesystem::create_directories(boost::filesystem::path(output_dir));
 
