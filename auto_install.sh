@@ -108,7 +108,10 @@ cd LabelCatheter
 mkdir build; cd build
 cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
-cp LabelCatheter "$dir/LabelCatheter"
+
+# ========== Installation ===================
+mkdir -p "$dir/LabelCatheter"
+cp LabelCatheter "$dir/"
 cp -r ../osx/LabelCatheter.app $dir
 
 cd $dir
