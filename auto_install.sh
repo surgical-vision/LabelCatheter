@@ -99,7 +99,7 @@ make -j8 || clean_up "make failed"
 # ========== Installation ===================
 printf '\n\e[1;31m==== Installing /usr/local/bin/label_catheter ====\e[0;39m\n'
 cp label_catheter /usr/local/bin/label_catheter
-cp video_exporter /usr/local/bin/label_catheter
+cp video_exporter /usr/local/bin/video_exporter
 
 # ========== Cleanup ===================
 cd $dir
