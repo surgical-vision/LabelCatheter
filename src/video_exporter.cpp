@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
 
             /* Create output directory if not yet existing */
             ostringstream oss_output_dir;
-            oss_output_dir << path(argv[1]).parent_path().string().substr(7) << "/" <<
+            oss_output_dir << path(argv[1]).parent_path().string() << "/" <<
                               path(argv[1]).filename().replace_extension("").string() << "_PER" << (int)sample_rate << "F";
             if(!boost::filesystem::is_directory(path(oss_output_dir.str())))
                 boost::filesystem::create_directories(path(oss_output_dir.str()));
 
-            cout << oss_output_dir.str() << endl;
+            cout << "Export video images to " << oss_output_dir.str() << endl;
 
             /* Export the very fast frame */
             ostringstream oss_output_img;
