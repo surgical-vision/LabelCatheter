@@ -66,10 +66,15 @@ int main(int argc, char* argv[])
     /* Import all frames for labelling */
     vector<string> img_files;
     directory_iterator end_itr;
+    try {
     for (directory_iterator itr(dir); itr != end_itr; ++itr)
         if (is_regular_file(itr->path()))
             if(itr->path().extension() == ".png" && itr->path().string().find("frame") != string::npos)
                 img_files.push_back(itr->path().filename().string());
+    } catch(filesystem_error& e) {
+        cerr << e.code().message() << ": " << dir << endl;
+        return 1;
+    }
 
     /* Parse existing CSV file */
     int existing_label_idx = ParseCSVFile(dir + "/" + "label.csv");

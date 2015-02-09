@@ -15,6 +15,7 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
+using namespace boost::filesystem;
 
 using namespace pangolin;
 using namespace std;
@@ -99,10 +100,12 @@ int main(int argc, char* argv[])
 
             /* Create output directory if not yet existing */
             ostringstream oss_output_dir;
-            boost::filesystem::path current_path(boost::filesystem::current_path());
-            oss_output_dir << current_path.string() << "/" << boost::filesystem::path(argv[1]).filename().replace_extension("").string() << "_PER" << (int)sample_rate << "F";
-            if(!boost::filesystem::is_directory(boost::filesystem::path(oss_output_dir.str())))
-                boost::filesystem::create_directories(boost::filesystem::path(oss_output_dir.str()));
+            oss_output_dir << path(argv[1]).parent_path().string().substr(7) << "/" <<
+                              path(argv[1]).filename().replace_extension("").string() << "_PER" << (int)sample_rate << "F";
+            if(!boost::filesystem::is_directory(path(oss_output_dir.str())))
+                boost::filesystem::create_directories(path(oss_output_dir.str()));
+
+            cout << oss_output_dir.str() << endl;
 
             /* Export the very fast frame */
             ostringstream oss_output_img;
