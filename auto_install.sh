@@ -65,6 +65,15 @@ else
 	brew install boost
 fi
 
+# FFmpeg
+printf '\e[1;36m==== Check FFmpeg ====\e[0;39m\n'
+ffmpeg=$(brew list --versions ffmpeg)
+if [[ -n $ffmpeg ]]; then 
+	echo "$ffmpeg installed" 
+else
+	brew install ffmpeg
+fi
+
 # Eigen
 printf '\e[1;36m==== Check Eigen ====\e[0;39m\n'
 eigen=$(brew list --versions eigen)
@@ -97,7 +106,7 @@ cmake .. || clean_up "cmake failed"
 make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
-printf '\n\e[1;31m==== Installing /usr/local/bin/label_catheter ====\e[0;39m\n'
+printf '\n\e[1;31m==== Installing /usr/local/bin/{label_catheter, video_exporter} ====\e[0;39m\n'
 cp label_catheter /usr/local/bin/label_catheter
 cp video_exporter /usr/local/bin/video_exporter
 

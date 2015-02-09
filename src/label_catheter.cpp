@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
 
                 fprintf(fout, "%d", atoi(cur_frame_idx.c_str())); // Frame No.
 
-                fprintf(fout, ",\t%d %d", body_pts.back()[0], body_pts.back()[0]); // Tip point
+                fprintf(fout, ",\t%d %d", body_pts.back()[0], body_pts.back()[1]); // Tip point
                 fprintf(fout, ",\t%d %d", body_pts.front()[0], body_pts.front()[1]); // Base point
 
                 fprintf(fout, ",\t%d", body_pts.size()); // Num of body points
