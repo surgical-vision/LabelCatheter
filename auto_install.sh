@@ -74,16 +74,6 @@ else
 	brew install eigen
 fi
 
-# OpenCV
-printf '\e[1;36m==== Check OpenCV ====\e[0;39m\n'
-opencv=$(brew list --versions opencv)
-if [[ -n $opencv ]]; then 
-	echo "$opencv installed" 
-else
-	brew tap homebrew/science
-	brew install opencv --with-ffmpeg
-fi
-
 # Pangolin
 printf '\e[1;36m==== Check Pangolin ====\e[0;39m\n'
 if [ ! -f /usr/local/lib/libpangolin* ]; then
@@ -91,7 +81,7 @@ if [ ! -f /usr/local/lib/libpangolin* ]; then
 	git clone https://github.com/stevenlovegrove/Pangolin.git Pangolin
 	cd Pangolin; mkdir build; cd build
 
-	cmake .. -DEXPORT_Pangolin=OFF -DBUILD_PANGOLIN_VIDEO=OFF -DBUILD_EXAMPLES=OFF || clean_up "cmake failed" 
+	cmake .. -DEXPORT_Pangolin=OFF -DBUILD_EXAMPLES=OFF || clean_up "cmake failed" 
 	make -j8 || clean_up "make failed"
 	make install
 else
@@ -108,8 +98,8 @@ make -j8 || clean_up "make failed"
 
 # ========== Installation ===================
 printf '\n\e[1;31m==== Installing /usr/local/bin/label_catheter ====\e[0;39m\n'
-cp LabelCatheter /usr/local/bin/label_catheter
-cp -r ../osx/LabelCatheter.app /Applications/
+cp label_catheter /usr/local/bin/label_catheter
+cp video_exporter /usr/local/bin/label_catheter
 
 # ========== Cleanup ===================
 cd $dir

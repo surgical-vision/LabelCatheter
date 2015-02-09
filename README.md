@@ -3,7 +3,7 @@ A tool for labelling B-spline for building catheter/guidewire ground truth datas
                                                             
                                                             
 ##Dependency
-GLEW, Eigen, OpenCV, Pangolin
+Eigen, Pangolin
 
 ##Installation
 

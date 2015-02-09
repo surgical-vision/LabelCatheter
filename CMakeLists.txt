@@ -37,17 +37,9 @@ if(EIGEN3_FOUND)
     message(STATUS "Eigen Found and Enabled")
 endif()
 
-find_package(OpenCV REQUIRED core highgui imgproc)
-if(OpenCV_FOUND)    
-    include_directories(${OpenCV_INCLUDE_DIRS})
-    link_libraries(${OpenCV_LIBS})
-    message(STATUS "OpenCV Found and Enabled")
-endif()
-
 find_package(Pangolin REQUIRED)
 if(Pangolin_FOUND)
-    include_directories(${Pangolin_INCLUDE_DIR})
-    link_libraries(${Pangolin_LIBRARY})
+    include_directories(${Pangolin_INCLUDE_DIR})    
     message(STATUS "Pangolin Found and Enabled")
 endif()
 
@@ -57,4 +49,8 @@ include_directories(${LIB_INC_DIR})
 set(INC_DIR include)
 list(APPEND HEADER ${INC_DIR}/bspline.h ${INC_DIR}/extra/pango_display.h ${INC_DIR}/extra/pango_drawer.h)
 
-add_executable(LabelCatheter src/main.cpp ${HEADER})
+add_executable(video_exporter src/video_exporter.cpp ${HEADER})
+target_link_libraries(video_exporter ${Pangolin_LIBRARY})
+
+add_executable(label_catheter src/label_catheter.cpp ${HEADER})
+target_link_libraries(label_catheter ${Pangolin_LIBRARY})

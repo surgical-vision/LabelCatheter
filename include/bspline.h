@@ -259,6 +259,57 @@ public:
         return pt;
     }
 
+    vector<Vector2i> GetContinuousPts()
+    {
+        /* Ensure connectibility by interpolation */
+        vector<Vector2i> continuous_pts;
+        if(IsReady()) {
+            for(int pt_idx = -1, seg_idx = 0; seg_idx <= GetNumCtrlPts(); ++pt_idx, ++seg_idx)
+            {
+                for(int d = 0; d <= lod; ++d)
+                {
+                    Matrix<_Tp,dim,1> pt = CubicIntplt(pt_idx, d/float(lod));
+                    Vector2i int_pt((int)pt[0], (int)pt[1]);
+
+                    if(continuous_pts.size() == 0)
+                        continuous_pts.push_back(int_pt);
+                    else if(continuous_pts.back() != int_pt) {
+                        int x0 = continuous_pts.back()[0];
+                        int y0 = continuous_pts.back()[1];
+                        int x1 = int_pt[0];
+                        int y1 = int_pt[1];
+
+                        int d_x = x1 - x0;
+                        int d_y = y1 - y0;
+
+                        if(d_x != 0) {
+                            for(int i = 1; i <= abs(d_x); ++i) {
+                                int inter_x = x0 + (d_x < 0 ? -i : i);
+                                int inter_y = y0 + round(d_y*(float(inter_x-x0)/float(d_x)));
+                                Vector2i inter_pt(inter_x, inter_y);
+                                if(continuous_pts.back() != inter_pt)
+                                    continuous_pts.push_back(inter_pt);
+                            }
+                        }
+
+                        if(d_y != 0) {
+                            for(int i = 1; i <= abs(d_y); ++i) {
+                                int inter_y = y0 + (d_y < 0 ? -i : i);
+                                int inter_x = x0 + round(d_x*(float(inter_y-y0)/float(d_y)));
+                                Vector2i inter_pt(inter_x, inter_y);
+                                if(continuous_pts.back() != inter_pt)
+                                    continuous_pts.push_back(inter_pt);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        return continuous_pts;
+    }
+
     void SetLOD(size_t const lod) { this->lod = lod; }
     size_t GetLOD() const { return lod; }
 
