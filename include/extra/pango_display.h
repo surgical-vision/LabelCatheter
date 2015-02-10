@@ -1,5 +1,5 @@
-#ifndef LABEL_BSPLINE_PANGO_DISPLAY
-#define LABEL_BSPLINE_PANGO_DISPLAY
+#ifndef LABEL_CATHETERE_PANGO_DISPLAY
+#define LABEL_CATHETERE_PANGO_DISPLAY
 
 #include <pangolin/pangolin.h>
 
@@ -57,4 +57,4 @@ inline void SetupContainer(pangolin::View& container, int num_views, float aspec
     }
 }
 
-#endif // LABEL_BSPLINE_PANGO_DISPLAY
+#endif // LABEL_CATHETERE_PANGO_DISPLAY

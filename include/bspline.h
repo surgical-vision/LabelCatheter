@@ -1,10 +1,13 @@
-#ifndef LABEL_BSPLIN_BSPLINE_H
-#define LABEL_BSPLIN_BSPLINE_H
+#ifndef LABEL_CATHETER_BSPLINE_H
+#define LABEL_CATHETER_BSPLINE_H
 
 #include <vector>
 
 #include <Eigen/Core>
 #include <Eigen/LU>
+
+using namespace std;
+using namespace Eigen;
 
 using namespace std;
 using namespace Eigen;
@@ -15,7 +18,7 @@ class Bspline
 {
 
 public:
-    enum BsplinType {OPEN, CLOSED} type;
+    enum BsplinType {OPEN = 0, CLOSED} type;
 
     Bspline() : lod(30), type(OPEN)
     {
@@ -29,7 +32,7 @@ public:
         ctrl_pts.conservativeResize(NoChange, 0);
     }
 
-    void Clear()
+    void Reset()
     {
         knot_pts.conservativeResize(NoChange, 0);
         ctrl_pts.conservativeResize(NoChange, 0);
@@ -40,14 +43,32 @@ public:
         return knot_pts.cols() > 3 && ctrl_pts.cols() > 3;
     }
 
-    void AddKnotPt(Matrix<_Tp,dim,1> const& pt)
+    void AddFrontKnotPt(Matrix<_Tp,dim,1> const& pt)
+    {
+        Matrix<_Tp,dim,Dynamic> pre_knot_pts = knot_pts;
+        knot_pts.conservativeResize(NoChange, knot_pts.cols()+1);
+        knot_pts.block(0, 1, knot_pts.rows(), knot_pts.cols()-1) = pre_knot_pts;
+        knot_pts.leftCols(1) = pt;
+        CvtKnotToCtrlCubic();
+    }
+
+    void AddFrontCtrlPt(Matrix<_Tp,dim,1> const& pt)
+    {
+        Matrix<_Tp,dim,Dynamic> pre_ctrl_pts = ctrl_pts;
+        ctrl_pts.conservativeResize(NoChange, ctrl_pts.cols()+1);
+        ctrl_pts.block(0, 1, ctrl_pts.rows(), ctrl_pts.cols()-1) = pre_ctrl_pts;
+        ctrl_pts.leftCols(1) = pt;
+        CvtCtrlToKnotCubic();
+    }
+
+    void AddBackKnotPt(Matrix<_Tp,dim,1> const& pt)
     {
         knot_pts.conservativeResize(NoChange, knot_pts.cols()+1);
         knot_pts.rightCols(1) = pt;
         CvtKnotToCtrlCubic();
     }
 
-    void AddKnotPts(Matrix<_Tp,dim,Dynamic> const& pts)
+    void AddBackKnotPts(Matrix<_Tp,dim,Dynamic> const& pts)
     {
         knot_pts = pts;
         CvtKnotToCtrlCubic();
@@ -64,6 +85,40 @@ public:
     {
         ctrl_pts = pts;
         CvtCtrlToKnotCubic();
+    }
+
+    void RemoveFrontKnotPt()
+    {
+        if(knot_pts.cols() > 0) {
+            Matrix<_Tp,dim,Dynamic> pre_knot_pts = knot_pts.block(0, 1, knot_pts.rows(), knot_pts.cols()-1);
+            knot_pts = pre_knot_pts;
+            CvtKnotToCtrlCubic();
+        }
+    }
+
+    void RemoveFrontCtrlPt()
+    {
+        if(ctrl_pts.cols() > 0) {
+            Matrix<_Tp,dim,Dynamic> pre_ctrl_pts = ctrl_pts.block(0, 1, ctrl_pts.rows(), ctrl_pts.cols()-1);
+            ctrl_pts = pre_ctrl_pts;
+            CvtCtrlToKnotCubic();
+        }
+    }
+
+    void RemoveBackKnotPt()
+    {
+        if(knot_pts.cols() > 0) {
+            knot_pts.conservativeResize(NoChange, knot_pts.cols()-1);
+            CvtKnotToCtrlCubic();
+        }
+    }
+
+    void RemoveBackCtrlPt()
+    {
+        if(ctrl_pts.cols() > 0) {
+            ctrl_pts.conservativeResize(NoChange, ctrl_pts.cols()-1);
+            CvtCtrlToKnotCubic();
+        }
     }
 
     void SetKnotPt(size_t const p_idx, Matrix<_Tp,dim,Dynamic> const& pt)
@@ -88,12 +143,12 @@ public:
         return knot_pts.col(GetPtIdx(p_idx));
     }
 
-    Matrix<_Tp,dim,1> GetKnotFirstPt() const
+    Matrix<_Tp,dim,1> GetFrontKnotPt() const
     {
         return knot_pts.leftCols(1);
     }
 
-    Matrix<_Tp,dim,1> GetKnotLastPt() const
+    Matrix<_Tp,dim,1> GetBackKnotPt() const
     {
         return knot_pts.rightCols(1);
     }
@@ -108,12 +163,12 @@ public:
         return ctrl_pts.col(GetPtIdx(p_idx));
     }
 
-    Matrix<_Tp,dim,1> GetCtrlFirstPt() const
+    Matrix<_Tp,dim,1> GetFrontCtrlPt() const
     {
         return ctrl_pts.leftCols(1);
     }
 
-    Matrix<_Tp,dim,1> GetCtrlLastPt() const
+    Matrix<_Tp,dim,1> GetBackCtrlPt() const
     {
         return ctrl_pts.rightCols(1);
     }
@@ -135,91 +190,6 @@ public:
         case CLOSED:
             return "Closed B-spline";
         }
-    }
-
-    _Tp GetLength() {
-
-        _Tp arc_length = 0.0;
-
-        if(IsReady()) {
-            for(int pt_idx = -1, seg_idx = 0; seg_idx <= GetNumCtrlPts(); ++pt_idx, ++seg_idx) {
-                for(int d = 0; d < lod; ++d) {
-                    Matrix<_Tp,dim,1> pt1 = CubicIntplt(pt_idx, (d)/double(lod));
-                    Matrix<_Tp,dim,1> pt2 = CubicIntplt(pt_idx, (d+1)/double(lod));
-
-                    _Tp const dx = pt2[0] - pt1[0];
-                    _Tp const dy = pt2[1] - pt1[1];
-
-                    arc_length += sqrt(dx*dx + dy*dy);
-                }
-            }
-        }
-
-        return arc_length;
-    }
-
-    void KnotEquidist()
-    {
-
-        if(IsReady()) {
-
-            bool has_converged = false;
-
-            while(!has_converged) {
-
-                _Tp const avg_arc_len = GetLength() / _Tp(GetNumKnotPts()-1);
-
-                Matrix<_Tp,dim,Dynamic> new_knot_pts;
-                new_knot_pts.conservativeResize(NoChange, 1);
-                new_knot_pts.rightCols(1) = knot_pts.leftCols(1);
-
-                _Tp begin_arc_len = 0.0;
-                _Tp end_arc_len = 0.0;
-                _Tp knot_arc_len = avg_arc_len;
-
-                for(int pt_idx = -1, seg_idx = 0; seg_idx <= GetNumKnotPts(); ++pt_idx, ++seg_idx) {
-
-                    begin_arc_len = end_arc_len;
-
-                    for(int d = 0; d < lod; ++d) {
-
-                        Matrix<_Tp,dim,1> pt1 = CubicIntplt(pt_idx, _Tp(d)/_Tp(lod));
-                        Matrix<_Tp,dim,1> pt2 = CubicIntplt(pt_idx, _Tp(d+1)/_Tp(lod));
-
-                        _Tp const dx = pt2[0] - pt1[0];
-                        _Tp const dy = pt2[1] - pt1[1];
-
-                        end_arc_len += sqrt(dx*dx + dy*dy);
-                    }
-
-                    while(end_arc_len - knot_arc_len > 1e-1) {
-
-                        _Tp t = _Tp(knot_arc_len - begin_arc_len) / _Tp(end_arc_len - begin_arc_len);
-
-                        new_knot_pts.conservativeResize(NoChange, new_knot_pts.cols()+1);
-
-                        if(t > 1e-2)
-                            new_knot_pts.rightCols(1) = CubicIntplt(pt_idx, t);
-                        else
-                            new_knot_pts.rightCols(1) = knot_pts.col(new_knot_pts.cols()-1);
-
-                        knot_arc_len += avg_arc_len;
-                    }
-                }
-
-                new_knot_pts.conservativeResize(NoChange, new_knot_pts.cols()+1);
-                new_knot_pts.rightCols(1) = knot_pts.rightCols(1);
-
-                if((new_knot_pts - knot_pts).norm() < 1e-1) {
-                    knot_pts = new_knot_pts;
-                    has_converged = true;
-                }
-
-                knot_pts = new_knot_pts;
-                CvtKnotToCtrlCubic();
-            }
-        }
-
     }
 
     Matrix<_Tp,dim,1> CubicIntplt(int const pt_idx, _Tp const t, size_t const d_order = 0) const {
@@ -257,57 +227,6 @@ public:
         }
 
         return pt;
-    }
-
-    vector<Vector2i> GetContinuousPts()
-    {
-        /* Ensure connectibility by interpolation */
-        vector<Vector2i> continuous_pts;
-        if(IsReady()) {
-            for(int pt_idx = -1, seg_idx = 0; seg_idx <= GetNumCtrlPts(); ++pt_idx, ++seg_idx)
-            {
-                for(int d = 0; d <= lod; ++d)
-                {
-                    Matrix<_Tp,dim,1> pt = CubicIntplt(pt_idx, d/float(lod));
-                    Vector2i int_pt((int)pt[0], (int)pt[1]);
-
-                    if(continuous_pts.size() == 0)
-                        continuous_pts.push_back(int_pt);
-                    else if(continuous_pts.back() != int_pt) {
-                        int x0 = continuous_pts.back()[0];
-                        int y0 = continuous_pts.back()[1];
-                        int x1 = int_pt[0];
-                        int y1 = int_pt[1];
-
-                        int d_x = x1 - x0;
-                        int d_y = y1 - y0;
-
-                        if(d_x != 0) {
-                            for(int i = 1; i <= abs(d_x); ++i) {
-                                int inter_x = x0 + (d_x < 0 ? -i : i);
-                                int inter_y = y0 + round(d_y*(float(inter_x-x0)/float(d_x)));
-                                Vector2i inter_pt(inter_x, inter_y);
-                                if(continuous_pts.back() != inter_pt)
-                                    continuous_pts.push_back(inter_pt);
-                            }
-                        }
-
-                        if(d_y != 0) {
-                            for(int i = 1; i <= abs(d_y); ++i) {
-                                int inter_y = y0 + (d_y < 0 ? -i : i);
-                                int inter_x = x0 + round(d_x*(float(inter_y-y0)/float(d_y)));
-                                Vector2i inter_pt(inter_x, inter_y);
-                                if(continuous_pts.back() != inter_pt)
-                                    continuous_pts.push_back(inter_pt);
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        return continuous_pts;
     }
 
     void SetLOD(size_t const lod) { this->lod = lod; }
@@ -405,6 +324,8 @@ private:
                 }
 
                 inv_B = B.inverse();
+
+                cout << inv_B << endl;
             }
 
             if(type == CLOSED)
@@ -438,4 +359,4 @@ private:
 
 };
 
-#endif // LABEL_BSPLIN_BSPLINE_H
+#endif // LABEL_CATHETER_BSPLINE_H

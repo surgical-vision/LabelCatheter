@@ -1,5 +1,5 @@
-#ifndef LABEL_BSPLINE_PANGO_DRAWER
-#define LABEL_BSPLINE_PANGO_DRAWER
+#ifndef LABEL_CATHETERE_PANGO_DRAWER
+#define LABEL_CATHETERE_PANGO_DRAWER
 
 #include <pangolin/pangolin.h>
 #include <pangolin/gl.h>
@@ -311,4 +311,4 @@ private:
     bool show_bspline;
 };
 
-#endif // LABEL_BSPLINE_PANGO_DRAWER
+#endif // LABEL_CATHETERE_PANGO_DRAWER

@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
     container[0].SetDrawFunction(std::ref(draw_routine));
 
     Var<int> sample_rate("ui.Sample Rate", 10, 1, 100);
+    Var<int> num_export_frames("ui.Frames to Export", 10000, 1, 10000);
     Var<int> frame_cur_idx("ui.Frame Idx");
     frame_cur_idx = 0;
 
@@ -130,7 +131,7 @@ int main(int argc, char* argv[])
                 frame_cur_idx = frame_cur_idx + sample_rate;
                 sample_rate = lock_sample_rate;
 
-                if(Pushed(button_exist))
+                if(Pushed(button_exist) || frame_cur_idx == num_export_frames)
                     break;
             }
 
