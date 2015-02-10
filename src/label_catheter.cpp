@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
     const unsigned h = img.height();
 
     uint32_t const ui_width = 180;
-    pangolin::View& container = SetupPangoGL(w, h, ui_width, "Video Exporter");
+    pangolin::View& container = SetupPangoGL(w, h, ui_width, "Label Catheter");
     SetupContainer(container, 1, (float)w/h);
 
     GLViewCvt gl_view_cvt(w, h, true);
