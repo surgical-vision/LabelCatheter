@@ -165,7 +165,6 @@ private:
 
 };
 
-float colour_roi[3] = {1.0, 0.0, 0.0};
 float colour_knot_pt[3] = {1.0, 0.0, 0.0};
 float colour_ctrl_pt[3] = {0.0, 1.0, 1.0};
 float colour_spline[3] = {1.0, 1.0, 1.0};
