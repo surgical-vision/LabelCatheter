@@ -10,5 +10,5 @@ FFmpeg, Eigen, Pangolin
 OSX only at the moment
 
 ```
-curl -o - https://raw.githubusercontent.com/surgical-vision/LabelCatheter/master/auto_install.sh | sh
+curl -o - https://raw.githubusercontent.com/surgical-vision/LabelCatheter/master/install.sh | sh
 ```
