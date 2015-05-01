@@ -71,9 +71,8 @@ int main(int argc, char* argv[])
     pangolin::View& container = SetupPangoGL(w, h, ui_width, "Video Exporter");
     SetupContainer(container, 1, (float)w/h);
 
-    GLViewCvt gl_view_cvt(w, h, true);
     pangolin::GlTexture frame_tex(w, h);
-    DrawTexture tex_drawer(gl_view_cvt, frame_tex);
+    DrawTexture tex_drawer(frame_tex);
 
     DrawingRoutine draw_routine;
     draw_routine.draw_funcs.push_back(std::ref(tex_drawer));

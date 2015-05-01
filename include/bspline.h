@@ -325,7 +325,6 @@ private:
 
                 inv_B = B.inverse();
 
-                cout << inv_B << endl;
             }
 
             if(type == CLOSED)

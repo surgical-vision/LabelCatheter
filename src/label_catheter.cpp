@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <list>
 #include <iomanip>
 
 #include <boost/filesystem/operations.hpp>
@@ -19,6 +20,7 @@
 #include <extra/pango_display.h>
 #include <extra/pango_drawer.h>
 #include <bspline.h>
+#include <csv.h>
 
 using namespace boost::filesystem;
 using namespace boost::gil;
@@ -26,34 +28,34 @@ using namespace boost::gil;
 using namespace pangolin;
 using namespace std;
 
-int ParseCSVFile(string const& csv_file)
+LabelData ParseCSVFile(string const& csv_file)
 {
-    FILE * fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
 
-    fp = fopen(csv_file.c_str(), "r");
-    if(fp == NULL)
-        return 0;
+    LabelData label_data;
 
-    int label_line_num = -1; // First line is the field names
-    while ((read = getline(&line, &len, fp)) != -1)
-        label_line_num++;
+    if(exists(csv_file)) {
+        io::CSVReader<1> in(csv_file);
+        in.read_header(io::ignore_extra_column, "body_xy");
+        string body_xy;
+        while(in.read_row(body_xy)) {
 
-    fclose(fp);
+            int x, y;
+            Pts pts;
+            for(std::istringstream num_iss( body_xy ); num_iss >> x >> y; )
+                pts.push_back(Vector2i(x, y));
 
-    if(line)
-        free(line);
+            label_data.push_back(pts);
+        }
+    }
 
-    return label_line_num;
+    return label_data;
 
 }
 
-vector<Vector2i> GetContinuousPts(Bspline<float,2> const& bspline)
+list<Vector2i> GetContinuousPts(Bspline<float,2> const& bspline)
 {
     /* Ensure connectibility by interpolation */
-    vector<Vector2i> continuous_pts;
+    list<Vector2i> continuous_pts;
     if(bspline.IsReady()) {
         for(int pt_idx = -1, seg_idx = 0; seg_idx <= bspline.GetNumCtrlPts(); ++pt_idx, ++seg_idx)
         {
@@ -127,26 +129,19 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    /* Parse existing CSV file */
-    char cmd_buf[500];
-
-    int existing_label_idx = ParseCSVFile(dir + "/" + "label.csv");
-    if(existing_label_idx == -1) {
-        sprintf(cmd_buf, "rm %s/label.csv", dir.c_str());
-        system(cmd_buf);
-        existing_label_idx = 0;
-    }
-
-    if(existing_label_idx == img_files.size()) {
-        cout << "All images have been labelled!" << endl;
-        return 0;
-    }
+    /* All label data is stored in a list */
+    LabelData label_data = ParseCSVFile(dir + "/" + "label.csv");
 
     /* Read image */
     rgb8_image_t img;
-    png_read_image(dir + "/" + img_files[existing_label_idx], img);
+    if(label_data.size() == img_files.size()) {
+        cout << boost::filesystem::path(argv[0]).filename() << ": all images have been labelled!" << endl;
+        png_read_image(dir + "/" + img_files[label_data.size()-1], img);
+    } else {
+        png_read_image(dir + "/" + img_files[label_data.size()], img);
+    }
 
-    // Setup Video Source    
+    // Setup Video Source
     const unsigned w = img.width();
     const unsigned h = img.height();
 
@@ -154,18 +149,19 @@ int main(int argc, char* argv[])
     pangolin::View& container = SetupPangoGL(w, h, ui_width, "Label Catheter");
     SetupContainer(container, 1, (float)w/h);
 
-    GLViewCvt gl_view_cvt(w, h, true);
-    Handler2D handler2d(gl_view_cvt);
+    Handler2D handler2d(w, h);
 
     Bspline<float,2> bspline;
-    DrawBSpline<float,2> bspline_drawer(gl_view_cvt, bspline);
+    DrawBSpline<float,2> bspline_drawer(w, h, bspline);
+    DrawTip tip_drawer(w, h, label_data);
 
     pangolin::GlTexture img_tex(w, h, GL_RGBA, true, 0, GL_RGB, GL_UNSIGNED_BYTE, interleaved_view_get_raw_data(view(img)));
-    DrawTexture tex_drawer(gl_view_cvt, img_tex);
+    DrawTexture tex_drawer(img_tex);
 
     DrawingRoutine draw_routine;
     draw_routine.draw_funcs.push_back(std::ref(tex_drawer));
     draw_routine.draw_funcs.push_back(std::ref(bspline_drawer));
+    draw_routine.draw_funcs.push_back(std::ref(tip_drawer));
 
     container[0].SetDrawFunction(std::ref(draw_routine)).SetHandler(&handler2d);
 
@@ -173,15 +169,18 @@ int main(int argc, char* argv[])
     totle_img = img_files.size();
 
     Var<int> img_cur_idx("ui.Image Current Idx");
-    img_cur_idx = existing_label_idx+1;
+    img_cur_idx = label_data.size();
 
     Var<bool> check_show_bspline("ui.Show B-spline", true, true, false);
     Var<bool> check_show_knot_pts("ui.Show Knot Pts", true, true, false);
     Var<bool> check_show_ctrl_pts("ui.Show Ctrl Pts", false, true, false);
+    Var<bool> check_show_tip_pts("ui.Show Tip Pts", false, true, false);
+    Var<bool> check_show_tip_traj("ui.Show Tip Traj", false, true, false);
 
     Var<bool> button_reset("ui.Reset", false, false);
     Var<bool> button_delete_last_label("ui.Delete Last Label", false, false);
     Var<bool> button_export_label("ui.Export Label", false, false);
+    Var<bool> button_export_img("ui.Export Image", false, false);
 
     // Register callback functions
     pangolin::RegisterKeyPressCallback('r', [&button_reset]() { button_reset = true; } );
@@ -202,101 +201,100 @@ int main(int argc, char* argv[])
         bspline_drawer.ShowCtrlPts(check_show_ctrl_pts);
         bspline_drawer.ShowKnotPts(check_show_knot_pts);
 
+        tip_drawer.ShowTipPts(check_show_tip_pts);
+        tip_drawer.ShowTipTraj(check_show_tip_traj);
+
         if(Pushed(button_reset))
             bspline.Reset();
 
-        if(Pushed(button_export_label)) {            
+        if(Pushed(button_export_label)) {
+
+            if(img_cur_idx == img_files.size()) {
+                cout << boost::filesystem::path(argv[0]).filename() << ": all images have been labelled!" << endl;
+                continue;
+            }
 
             /* Export label image */
             gray8_image_t label_img(w, h);
             fill_pixels(view(label_img), 0);
 
-            vector<Vector2i> const& body_pts = GetContinuousPts(bspline);
-            for(auto pt : body_pts)
+            label_data.push_back(GetContinuousPts(bspline));
+            for(auto pt : label_data.back())
                 view(label_img)(pt[0], pt[1]) = 255;
 
-            string label_img_file = img_files[(int)img_cur_idx-1];
+            string label_img_file = img_files[(int)img_cur_idx];
             label_img_file.replace(0, 5, "label");
 
             cout << "Write: " << dir << "/" << label_img_file << endl;
             boost::gil::png_write_view(dir + "/" + label_img_file, const_view(label_img));
 
-            /* Export CSV file */            
-            string csv_file = "label.csv";
-            if(!exists((dir + "/" + csv_file))) {
-                FILE* fout = fopen((dir + "/" + csv_file).c_str(), "w");
-                fprintf(fout, "frame idx,\ttip_xy,\tbase_xy,\tnum_body_pt,\tbody_xy");
-                fprintf(fout, "\n");
-                fclose(fout);
-            }
+            FILE* fout = fopen((dir + "/" + "label.csv").c_str(), "w");
 
-            string cur_frame_idx_str = label_img_file.substr(label_img_file.find("_")+1, label_img_file.find(".")-label_img_file.find("_")-1);
-            FILE* fout = fopen((dir + "/" + csv_file).c_str(), "a");
+            /* Overwrite label data */
+            fprintf(fout, "frame_idx,\ttip_xy,\tbase_xy,\tnum_body_pt,\tbody_xy\n");
+            size_t frame_idx = 0;
+            for(auto label : label_data)
+            {
 
-            if(body_pts.size() > 0) {
+                fprintf(fout, "%d", frame_idx++); // Frame idx
 
-                fprintf(fout, "%d", atoi(cur_frame_idx_str.c_str())); // Frame No.
+                if(label.size() > 0) {
 
-                fprintf(fout, ",\t%d %d", body_pts.back()[0], body_pts.back()[1]); // Tip point
-                fprintf(fout, ",\t%d %d", body_pts.front()[0], body_pts.front()[1]); // Base point
+                    fprintf(fout, ",\t%d %d", label.back()[0], label.back()[1]); // Tip point
+                    fprintf(fout, ",\t%d %d", label.front()[0], label.front()[1]); // Base point
 
-                fprintf(fout, ",\t%d", body_pts.size()); // Num of body points
+                    fprintf(fout, ",\t%d", label.size()); // Num of body points
 
-                fprintf(fout, ",\t"); // Body point
-                for(int i = 0; i < body_pts.size(); ++i)
-                    fprintf(fout, "%d %d ", body_pts[i][0], body_pts[i][1]);
+                    fprintf(fout, ",\t"); // Body point
+                    for(auto pt : label)
+                        fprintf(fout, "%d %d ", pt[0], pt[1]);
 
-                fprintf(fout, "\n");
-            } else {
+                    fprintf(fout, "\n");
+                } else {
 
-                fprintf(fout, "%d", atoi(cur_frame_idx_str.c_str())); // Frame No.
+                    fprintf(fout, ",\t"); // Tip point
+                    fprintf(fout, ",\t"); // Base point
 
-                fprintf(fout, ",\t"); // Tip point
-                fprintf(fout, ",\t"); // Base point
+                    fprintf(fout, ",\t"); // Num of body points
 
-                fprintf(fout, ",\t"); // Num of body points
+                    fprintf(fout, ",\t"); // Body point
 
-                fprintf(fout, ",\t"); // Body point
+                    fprintf(fout, "\n");
 
-                fprintf(fout, "\n");
-
+                }
             }
 
             fclose(fout);
 
             /* Proceed the next */
-            if(img_cur_idx == img_files.size()) {
-                cout << "All done!" << endl;
-                pangolin::Quit();
-            }
-            else {
-                img_cur_idx = img_cur_idx + 1;
-                png_read_image(dir + "/" + img_files[(int)img_cur_idx-1], img);
-                img_tex.Upload(interleaved_view_get_raw_data(view(img)), GL_RGB, GL_UNSIGNED_BYTE);
-            }
+            img_cur_idx = img_cur_idx + 1;
+            png_read_image(dir + "/" + img_files[(int)img_cur_idx], img);
+            img_tex.Upload(interleaved_view_get_raw_data(view(img)), GL_RGB, GL_UNSIGNED_BYTE);
 
             bspline.Reset();
+
         }
 
         if(Pushed(button_delete_last_label))
         {
-            if(img_cur_idx > 1) {
+            if(img_cur_idx > 0) {
 
-                sprintf(cmd_buf, "head -n %d %s/label.csv > %s/.label.csv", int(img_cur_idx)-1, dir.c_str(), dir.c_str());
-                system(cmd_buf);
-
-                sprintf(cmd_buf, "cp %s/.label.csv %s/label.csv", dir.c_str(), dir.c_str());
-                system(cmd_buf);
-
-                sprintf(cmd_buf, "rm %s/.label.csv", dir.c_str());
-                system(cmd_buf);
+                label_data.pop_back();
 
                 img_cur_idx = img_cur_idx - 1;
-                png_read_image(dir + "/" + img_files[(int)img_cur_idx-1], img);
+                png_read_image(dir + "/" + img_files[(int)img_cur_idx], img);
                 img_tex.Upload(interleaved_view_get_raw_data(view(img)), GL_RGB, GL_UNSIGNED_BYTE);
 
                 bspline.Reset();
             }
+        }
+
+        if(Pushed(button_export_img)) {
+
+            glReadBuffer(GL_FRONT);
+            glReadPixels(container[0].v.l+0.5, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, interleaved_view_get_raw_data(view(img)));
+
+            boost::gil::png_write_view(dir + "/output_img.png", flipped_up_down_view(const_view(img)));
         }
 
         // Swap frames and Process Events

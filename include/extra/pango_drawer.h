@@ -10,85 +10,26 @@
 using namespace Eigen;
 using namespace pangolin;
 
-class GLViewCvt
-{
-public:
-    GLViewCvt(uint32_t const w, uint32_t const h, bool const use_typical_coord = false, int level = 0)
-        : w(w), h(h), use_typical_coord(use_typical_coord), level(level),
-          intensity_scale(1.0),
-          Pixel_scale(4*1.0/max(w, h))
-    {}
-
-    void WindowToImage(const Viewport& v, int wx, int wy, float& ix, float& iy) const
-    {
-        ix = w * (wx - v.l) /(float)v.w - 0.5;
-        iy = h * (wy - v.b) /(float)v.h - 0.5;
-        ix = std::max(0.0f,std::min(ix, w-1.0f));
-        iy = std::max(0.0f,std::min(iy, h-1.0f));
-
-        if(use_typical_coord)
-            iy = h - iy - 1.0f;
-    }
-
-    void ImageToWindow(const Viewport& v, float ix, float iy, float& wx, float& wy) const
-    {
-        if(use_typical_coord)
-            iy = h - iy - 1.0f;
-
-        wx = v.l + (float)v.w * ix / w;
-        wy = v.b + (float)v.h * iy / h;
-    }
-
-    Vector2f ImageToNDC(Vector2f const img_pt) const
-    {
-        return Vector2f((1<<level) * (img_pt[0]+0.5) * 2.0 / w - 1,
-                        (1<<level) * ((use_typical_coord ? (h - img_pt[1] - 1.0f) : img_pt[1])+0.5) * 2.0 / h - 1);
-    }
-
-    float GetPixelScale() const
-    {
-        return Pixel_scale;
-    }
-
-    void SetPixelScale(float scale)
-    {
-        Pixel_scale = scale;
-    }
-
-    int GetLevel() const
-    {
-        return level;
-    }
-
-    uint32_t GetWidth() const { return w; }
-    uint32_t GetHeight() const { return h; }
-
-    bool IsTypicalCoord() const { return use_typical_coord; }
-
-protected:
-
-    uint32_t w, h;
-
-    float intensity_scale;
-    float Pixel_scale;
-    int level;
-
-    bool use_typical_coord;
-
-};
-
 /* Flip Y from the handler! */
 class Handler2D : public Handler
 {
 public:
-    Handler2D(GLViewCvt const& view_img_cvt)
-        : view_img_cvt(view_img_cvt)
+    Handler2D(size_t const w, size_t const h)
+        : w(w), h(h)
     {
         has_picked_pt = false;
         has_selected_roi = false;
 
         selected_roi = Vector4f::Zero();
         picked_pt = Vector2f::Zero();
+    }
+
+    void WindowToImage(const Viewport& v, int wx, int wy, float& ix, float& iy) const
+    {
+        ix = w * (wx - v.l) /(float)v.w - 0.5;
+        iy = h * (wy - v.b) /(float)v.h - 0.5;
+        ix = std::max(0.0f,std::min(ix, w-1.0f));
+        iy = h - std::max(0.0f,std::min(iy, h-1.0f)) - 1.0;
     }
 
     virtual void Keyboard(View&, unsigned char key, int /*x*/, int /*y*/, bool /*pressed*/)
@@ -106,25 +47,16 @@ public:
     {
 
         if(pressed && button == MouseButtonLeft) {
-            view_img_cvt.WindowToImage(view.v, x, y, picked_pt[0], picked_pt[1]);
+            WindowToImage(view.v, x, y, picked_pt[0], picked_pt[1]);
             has_picked_pt = true;
         }
 
-        if(pressed && button == MouseButtonRight) {
-            view_img_cvt.WindowToImage(view.v, x, y, selected_roi[0], selected_roi[1]);
-            selected_roi[2] = selected_roi[0];
-            selected_roi[3] = selected_roi[1];
-            has_selected_roi = true;
-        } else if(!pressed && button == MouseButtonRight) {
-            view_img_cvt.WindowToImage(view.v, x, y, selected_roi[2], selected_roi[3]);
-            has_selected_roi = false;
-        }
     }
 
     virtual void MouseMotion(View& view, int x, int y, int /*button_state*/)
     {
         if(has_selected_roi)
-            view_img_cvt.WindowToImage(view.v, x, y, selected_roi[2], selected_roi[3]);
+            WindowToImage(view.v, x, y, selected_roi[2], selected_roi[3]);
     }
 
 
@@ -153,9 +85,9 @@ public:
         return has_picked_pt;
     }
 
-private:
+private:    
 
-    GLViewCvt const& view_img_cvt;
+    size_t w, h;
 
     bool has_selected_roi;
     Vector4f selected_roi;
@@ -170,6 +102,8 @@ float colour_ctrl_pt[3] = {0.0, 1.0, 1.0};
 float colour_spline[3] = {1.0, 1.0, 1.0};
 float colour_pipe_contour[3] = {0.0, 1.0, 0.0};
 float colour_pipe_contour_pts[3] = {1.0, 1.0, 0.0};
+float colour_tip_pts[3] = {1.0, 0.0, 1.0};
+float colour_tip_traj[3] = {1.0, 1.0, 0.0};
 
 inline void glVertex( const Eigen::Vector2f& p ) { glVertex2fv(p.data()); }
 inline void glVertex( const Eigen::Vector2d& p ) { glVertex2dv(p.data()); }
@@ -194,8 +128,8 @@ public:
 class DrawTexture
 {
 public:
-    DrawTexture(GLViewCvt const& gl_view_cvt, GlTexture const& tex)
-        : gl_view_cvt(gl_view_cvt), tex(tex){}
+    DrawTexture(GlTexture const& tex)
+        : tex(tex){}
 
     void operator()(pangolin::View& view) {
 
@@ -206,13 +140,12 @@ public:
 
         view.Activate();
 
-        tex.RenderToViewport(gl_view_cvt.IsTypicalCoord());
+        tex.RenderToViewportFlipY();
 
         glPopAttrib();
     }
 
 private:
-    GLViewCvt const& gl_view_cvt;
     GlTexture const& tex;
 };
 
@@ -220,10 +153,13 @@ template<typename _Tp, int dim>
 class DrawBSpline
 {
 public:
-    DrawBSpline(GLViewCvt const& view_img_cvt, Bspline<_Tp,dim> const& bspline)
-        : gl_view_cvt(view_img_cvt), bspline(bspline), offset(Vector2f::Zero()),
-          show_ctrl_pts(true), show_knot_pts(true), show_bspline(true)
+    DrawBSpline(size_t const w, size_t const h, Bspline<_Tp,dim> const& bspline)
+        : w(w), h(h), bspline(bspline), show_ctrl_pts(true), show_knot_pts(true), show_bspline(true)
     {}
+
+    Vector2f ImageToNDC(Vector2f const img_pt) const {
+        return Vector2f((img_pt[0]+0.5) * 2.0 / w - 1, ((h-img_pt[1])+0.5) * 2.0 / h - 1);
+    }
 
     void ShowCtrlPts(bool const show) { show_ctrl_pts = show; }
     void ShowKnotPts(bool const show) { show_knot_pts = show; }
@@ -239,10 +175,10 @@ public:
         {
 
             Vector2f pt = bspline.GetCtrlPt(k);
-            pt = gl_view_cvt.ImageToNDC(Vector2f(pt[0]+offset[0], pt[1]+offset[1]));
+            pt = ImageToNDC(Vector2f(pt[0], pt[1]));
 
             glColor3fv(colour_ctrl_pt);
-            glDrawCircle(pt[0], pt[1], gl_view_cvt.GetPixelScale());
+            glDrawCircle(pt[0], pt[1], 0.005);
         }
     }
 
@@ -252,10 +188,10 @@ public:
         {
             Vector2f pt = bspline.GetKnotPt(k);
 
-            pt = gl_view_cvt.ImageToNDC(Vector2f(pt[0]+offset[0], pt[1]+offset[1]));
+            pt = ImageToNDC(Vector2f(pt[0], pt[1]));
 
             glColor3fv(colour_knot_pt);
-            glDrawCircle(pt[0], pt[1], gl_view_cvt.GetPixelScale());
+            glDrawCircle(pt[0], pt[1], 0.005);
         }
     }
 
@@ -270,8 +206,8 @@ public:
 
                 glColor3fv(colour_spline);
                 glBegin(GL_LINES);
-                glVertex(gl_view_cvt.ImageToNDC(Vector2f(pt1[0]+offset[0], pt1[1]+offset[1])));
-                glVertex(gl_view_cvt.ImageToNDC(Vector2f(pt2[0]+offset[0], pt2[1]+offset[1])));
+                glVertex(ImageToNDC(Vector2f(pt1[0], pt1[1])));
+                glVertex(ImageToNDC(Vector2f(pt2[0], pt2[1])));
                 glEnd();
             }
         }
@@ -299,15 +235,96 @@ public:
 
 private:
 
-    GLViewCvt const& gl_view_cvt;
+    size_t w, h;
 
     Bspline<_Tp,dim> const& bspline;
-
-    Vector2f offset;
 
     bool show_ctrl_pts;
     bool show_knot_pts;
     bool show_bspline;
+};
+
+
+typedef list<Vector2i> Pts;
+typedef list<Pts> LabelData;
+
+class DrawTip
+{
+public:
+    DrawTip(size_t const w, size_t const h, LabelData const& label_data)
+        : w(w), h(h), label_data(label_data), show_tip_traj(true)
+    {}
+
+    Vector2f ImageToNDC(Vector2f const img_pt) const {
+        return Vector2f((img_pt[0]+0.5) * 2.0 / w - 1, ((h-img_pt[1])+0.5) * 2.0 / h - 1);
+    }
+
+    void ShowTipPts(bool const show) { show_tip_pts = show; }
+    void ShowTipTraj(bool const show) { show_tip_traj = show; }
+
+    void DrawTipPts() {
+
+        for(auto label : label_data) {
+
+            Vector2f pt = ImageToNDC(Vector2f(label.back()[0], label.back()[1]));
+            glColor3fv(colour_tip_pts);
+            glDrawCircle(pt[0], pt[1], 0.002);
+
+        }
+
+    }
+
+    void DrawTipTraj() {
+
+        Vector2i pt1, pt2;
+        pt1 = label_data.front().back();
+        for(auto label : label_data) {
+
+            pt2 = label.back();
+
+            glColor3fv(colour_tip_traj);
+            glBegin(GL_LINES);
+            glVertex(ImageToNDC(Vector2f(pt1[0], pt1[1])));
+            glVertex(ImageToNDC(Vector2f(pt2[0], pt2[1])));
+            glEnd();
+
+            pt1 = label.back();
+        }
+
+    }
+
+
+    void operator()(pangolin::View& view) {
+
+        glPushAttrib(GL_ENABLE_BIT);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_LIGHTING);
+
+        view.Activate();
+
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        if(label_data.size() > 0) {
+
+            if(show_tip_pts) DrawTipPts();
+            if(show_tip_traj) DrawTipTraj();
+        }
+
+        glPopAttrib();
+    }
+
+private:
+
+    size_t w, h;
+
+    LabelData const& label_data;
+
+    bool show_tip_pts;
+    bool show_tip_traj;
+
 };
 
 #endif // LABEL_CATHETERE_PANGO_DRAWER

@@ -47,7 +47,7 @@ list(APPEND LIB_INC_DIR  "${PROJECT_SOURCE_DIR}/include;${CMAKE_CURRENT_BINARY_D
 include_directories(${LIB_INC_DIR})
 
 set(INC_DIR include)
-list(APPEND HEADER ${INC_DIR}/bspline.h ${INC_DIR}/extra/pango_display.h ${INC_DIR}/extra/pango_drawer.h)
+list(APPEND HEADER ${INC_DIR}/bspline.h ${INC_DIR}/csv.h ${INC_DIR}/extra/pango_display.h ${INC_DIR}/extra/pango_drawer.h)
 
 add_executable(video_exporter src/video_exporter.cpp ${HEADER})
 target_link_libraries(video_exporter ${Pangolin_LIBRARY})
