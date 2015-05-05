@@ -1,6 +1,8 @@
 #ifndef LABEL_CATHETERE_PANGO_DRAWER
 #define LABEL_CATHETERE_PANGO_DRAWER
 
+#include <queue>
+
 #include <pangolin/pangolin.h>
 #include <pangolin/gl.h>
 #include <pangolin/glsl.h>
@@ -265,30 +267,36 @@ public:
     void DrawTipPts() {
 
         for(auto label : label_data) {
-
-            Vector2f pt = ImageToNDC(Vector2f(label.back()[0], label.back()[1]));
-            glColor3fv(colour_tip_pts);
-            glDrawCircle(pt[0], pt[1], 0.002);
-
+            if(label.size() > 0) {
+                Vector2f pt = ImageToNDC(Vector2f(label.back()[0], label.back()[1]));
+                glColor3fv(colour_tip_pts);
+                glDrawCircle(pt[0], pt[1], 0.002);
+            }
         }
 
     }
 
     void DrawTipTraj() {
 
-        Vector2i pt1, pt2;
-        pt1 = label_data.front().back();
+        queue<Vector2i> pts;
+
         for(auto label : label_data) {
 
-            pt2 = label.back();
+            if(label.size() != 0) {
 
-            glColor3fv(colour_tip_traj);
-            glBegin(GL_LINES);
-            glVertex(ImageToNDC(Vector2f(pt1[0], pt1[1])));
-            glVertex(ImageToNDC(Vector2f(pt2[0], pt2[1])));
-            glEnd();
+                pts.push(label.back());
 
-            pt1 = label.back();
+                if(pts.size() == 2) {
+
+                    glColor3fv(colour_tip_traj);
+                    glBegin(GL_LINES);
+                    glVertex(ImageToNDC(Vector2f(pts.front()[0], pts.front()[1])));
+                    glVertex(ImageToNDC(Vector2f(pts.back()[0], pts.back()[1])));
+                    glEnd();
+
+                    pts.pop();
+                }
+            }
         }
 
     }
